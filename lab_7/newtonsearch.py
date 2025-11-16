@@ -23,14 +23,12 @@ def fH(X):
 #	X - is 2x1 vector of input variables
 #	OUTPUT ARGUMENTS:
 #	v is a derivative function value
-
 def dfH(X):
     x = X[0]
     y = X[1]
     v = np.copy(X)
     v[0] = 2 * (x**2 + y - 11) * (2 * x) + 2 * (x + y**2 - 7)
     v[1] = 2 * (x**2 + y - 11) + 2 * (x + y**2 - 7) * (2 * y)
-
     return v
 
 
@@ -40,7 +38,6 @@ def dfH(X):
 #	X - is 2x1 vector of input variables
 #	OUTPUT ARGUMENTS:
 #	v is a function value
-
 def fR(X):
     x = X[0]
     y = X[1]
@@ -85,8 +82,6 @@ def H(X, tol, df):
 
 
 
-
-
 def nsearch(f, df, x0, tol):
 # NSEARCH searches for minimum using Newton method
 # 	answer_ = nsearch(f, df, x0, tol)
@@ -102,13 +97,14 @@ def nsearch(f, df, x0, tol):
 # 	neval - number of function evaluations
 #   coords - array of statistics
 
-
     kmax = 1000
     x = np.copy(x0)
     x_prev = x + 2 * tol
     neval = 0
     coords = []
     k = 0
+
+
     while (norm(x - x_prev) >= tol) and (k < kmax):
         x_prev = x
         g = df(x)
@@ -118,6 +114,7 @@ def nsearch(f, df, x0, tol):
         x = x + p
         coords.append(x)
         k += 1
+
     xmin = x
     fmin = f(x)
     neval += 1
