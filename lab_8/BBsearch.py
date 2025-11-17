@@ -1,90 +1,93 @@
 import numpy as np
 from numpy.linalg import norm
 
-def goldensectionsearch(f, interval, tol):
-    a, b = interval
-    gr = (1 + np.sqrt(5)) / 2
-    resphi = 2 - gr
-    h = abs(b - a)
-    if h <= tol:
-        xm = (a + b) / 2
-        return [xm, f(xm), 0]
-    c = a + resphi * h
-    d = b - resphi * h
-    yc = f(c)
-    yd = f(d)
-    neval = 2
-    while h > tol:
-        if yc < yd:
-            b = d
-            d = c
-            yd = yc
-            h = abs(b - a)
-            c = a + resphi * h
-            yc = f(c)
-        else:
-            a = c
-            c = d
-            yc = yd
-            h = abs(b - a)
-            d = b - resphi * h
-            yd = f(d)
-        neval += 1
-    xm = (a + b) / 2
-    fmin = f(xm)
-    neval += 1
-    return [xm, fmin, neval]
+def goldensectionsearch(f, interval, tol):  # Определение функции поиска методом золотого сечения
+    a, b = interval  # Извлечение границ интервала
+    gr = (1 + np.sqrt(5)) / 2  # Вычисление золотого сечения (золотое отношение)
+    resphi = 2 - gr  # Вычисление дополнения до 2 (1/φ²)
+    h = abs(b - a)  # Вычисление начальной длины интервала
+    if h <= tol:  # Проверка, если интервал уже меньше допуска
+        xm = (a + b) / 2  # Находим середину интервала
+        return [xm, f(xm), 0]  # Возвращаем середину, значение функции, 0 вычислений
+    c = a + resphi * h  # Вычисление первой внутренней точки
+    d = b - resphi * h  # Вычисление второй внутренней точки
+    yc = f(c)  # Вычисление значения функции в точке c
+    yd = f(d)  # Вычисление значения функции в точке d
+    neval = 2  # Счетчик вычислений функции
+    while h > tol:  # Цикл до тех пор, пока длина интервала больше допуска
+        if yc < yd:  # Если значение в c меньше значения в d
+            b = d  # Перемещаем правую границу в d
+            d = c  # Новая правая точка - старая левая
+            yd = yc  # Значение в новой правой точке
+            h = abs(b - a)  # Обновляем длину интервала
+            c = a + resphi * h  # Вычисляем новую левую точку
+            yc = f(c)  # Вычисляем значение функции в новой точке c
+        else:  # Если значение в d меньше или равно значению в c
+            a = c  # Перемещаем левую границу в c
+            c = d  # Новая левая точка - старая правая
+            yc = yd  # Значение в новой левой точке
+            h = abs(b - a)  # Обновляем длину интервала
+            d = b - resphi * h  # Вычисляем новую правую точку
+            yd = f(d)  # Вычисляем значение функции в новой точке d
+        neval += 1  # Увеличиваем счетчик вычислений
+    xm = (a + b) / 2  # Находим конечную точку минимума
+    fmin = f(xm)  # Вычисляем значение функции в точке минимума
+    neval += 1  # Увеличиваем счетчик на последнее вычисление
+    return [xm, fmin, neval]  # Возвращаем точку минимума, значение, количество вычислений
 
-def fR(X):
-    x = X[0]
-    y = X[1]
-    v = (1 - x) ** 2 + 100 * (y - x ** 2) ** 2
-    return v
+def fR(X):  # Определение функции Розенброка
+    x = X[0]  # Извлечение x-координаты
+    y = X[1]  # Извлечение y-координаты
+    v = (1 - x) ** 2 + 100 * (y - x ** 2) ** 2  # Вычисление значения функции Розенброка
+    return v  # Возвращаем значение функции
 
-def dfR(X):
-    x = X[0]
-    y = X[1]
-    v = np.copy(X)
-    v[0] = -2 * (1 - x) + 200 * (y - x ** 2) * (- 2 * x)
-    v[1] = 200 * (y - x ** 2)
-    return v
+def dfR(X):  # Определение градиента функции Розенброка
+    x = X[0]  # Извлечение x-координаты
+    y = X[1]  # Извлечение y-координаты
+    v = np.copy(X)  # Создание копии входного вектора
+    v[0] = -2 * (1 - x) + 200 * (y - x ** 2) * (- 2 * x)  # Вычисление частной производной по x
+    v[1] = 200 * (y - x ** 2)  # Вычисление частной производной по y
+    return v  # Возвращаем вектор градиента
 
-def bbsearch(f, df, x0, tol):
-    kmax = 1000
-    Delta = 0.1
-    x_k = np.array(x0, dtype=float).flatten()
-    g_k = df(x_k).flatten()
-    neval = 1
-    coords = [np.copy(x_k)]
-    alpha_initial_search, _, neval_ls = goldensectionsearch(lambda alpha: f(x_k - alpha * g_k), (0, 1), tol)
-    neval += neval_ls
-    x_k1 = x_k - alpha_initial_search * g_k
-    g_k1 = df(x_k1).flatten()
-    neval += 1
-    coords.append(np.copy(x_k1))
-    deltaX = x_k1 - x_k
-    g_prev = g_k
-    g_curr = g_k1
-    x_prev = x_k
-    x_curr = x_k1
-    k = 1
-    while norm(deltaX) >= tol and k < kmax:
-        dx = x_curr - x_prev
-        dg = g_curr - g_prev
-        alpha_bb = np.dot(dx, dx) / np.dot(dx, dg)
-        alpha_stab = Delta / norm(g_curr)
-        alpha_k = min(alpha_bb, alpha_stab)
-        x_new = x_curr - alpha_k * g_curr
-        x_prev = x_curr
-        g_prev = g_curr
-        deltaX = x_new - x_curr
-        g_new = df(x_new).flatten()
-        neval += 1
-        x_curr = x_new
-        g_curr = g_new
-        coords.append(np.copy(x_curr))
-        k += 1
-    xmin = x_curr
-    fmin = f(xmin)
-    answer_ = [xmin, fmin, neval, coords]
-    return answer_
+def bbsearch(f, df, x0, tol):  # Определение функции метода Барзилайа-Борвейна
+    kmax = 1000  # Максимальное число итераций
+    Delta = 0.1  # Параметр стабилизации
+
+    x_k = np.array(x0, dtype=float).flatten()  # Преобразование начальной точки в плоский массив
+    g_k = df(x_k).flatten()  # Вычисление градиента в начальной точке
+    neval = 1  # Счетчик вычислений функции
+    coords = [np.copy(x_k)]  # Список для хранения истории координат
+    alpha_initial_search, _, neval_ls = goldensectionsearch(lambda alpha: f(x_k - alpha * g_k), (0, 1), tol)  # Поиск начального шага методом золотого сечения
+    neval += neval_ls  # Обновление счетчика вычислений
+    x_k1 = x_k - alpha_initial_search * g_k  # Вычисление следующей точки
+    g_k1 = df(x_k1).flatten()  # Вычисление градиента в следующей точке
+    neval += 1  # Обновление счетчика вычислений
+    coords.append(np.copy(x_k1))  # Добавление новой точки в историю
+
+    deltaX = x_k1 - x_k  # Вычисление разности между точками
+    g_prev = g_k  # Сохранение предыдущего градиента
+    g_curr = g_k1  # Сохранение текущего градиента
+    x_prev = x_k  # Сохранение предыдущей точки
+    x_curr = x_k1  # Сохранение текущей точки
+
+    k = 1  # Номер текущей итерации
+    while norm(deltaX) >= tol and k < kmax:  # Цикл до сходимости или макс. итераций
+        dx = x_curr - x_prev  # Разность между текущей и предыдущей точками
+        dg = g_curr - g_prev  # Разность между текущим и предыдущим градиентами
+        alpha_bb = np.dot(dx, dx) / np.dot(dx, dg)  # Вычисление шага метода Барзилайа-Борвейна
+        alpha_stab = Delta / norm(g_curr)  # Вычисление стабилизирующего шага
+        alpha_k = min(alpha_bb, alpha_stab)  # Выбор минимального из двух шагов
+        x_new = x_curr - alpha_k * g_curr  # Вычисление новой точки
+        x_prev = x_curr  # Обновление предыдущей точки
+        g_prev = g_curr  # Обновление предыдущего градиента
+        deltaX = x_new - x_curr  # Обновление разности точек
+        g_new = df(x_new).flatten()  # Вычисление градиента в новой точке
+        neval += 1  # Увеличение счетчика вычислений
+        x_curr = x_new  # Обновление текущей точки
+        g_curr = g_new  # Обновление текущего градиента
+        coords.append(np.copy(x_curr))  # Добавление текущей точки в историю
+        k += 1  # Увеличение номера итерации
+    xmin = x_curr  # Финальная точка минимума
+    fmin = f(xmin)  # Значение функции в точке минимума
+    answer_ = [xmin, fmin, neval, coords]  # Подготовка результата
+    return answer_  # Возвращение результата
